@@ -11,7 +11,7 @@ Solution numérique complète d'instruction et de suivi des demandes d'actes adm
 
 Le projet est structuré sous forme de **Monorepo** comprenant :
 - **`/backend`** : API REST sous **Laravel 11** alimentée par une base de données **SQLite** prête à l'emploi et documentée automatiquement avec **Dedoc Scramble (OpenAPI/Swagger)**.
-- **`/frontend`** : Application Monopage (SPA) sous **Vue.js 3 (Composition API / `<script setup>`)**, propulsée par **Vite** et stylisée avec **Tailwind CSS**. Elle intègre le portail citoyen aux couleurs nationales du Bénin et la console agent **Soft UI Dashboard PRO**.
+- **`/frontend`** : Application Monopage (SPA) sous **Vue.js 3 (Composition API / `<script setup>`)**, propulsée par **Vite** et stylisée avec **Tailwind CSS**. Elle intègre le portail citoyen (carrousel béninois, tableau de bord NPI, récépissé officiel, impression PDF, assistance vocale) et la console agent **Soft UI Dashboard PRO**. Le projet est 100% responsive sur mobile, tablette et desktop.
 
 ---
 
@@ -135,6 +135,16 @@ npm run dev
 4. **Validation Stricte par FormRequests** : Isolation complète de la validation d'entrée (`StoreDemandeRequest` et `UpdateStatutDemandeRequest`) avec messages d'erreurs clairs en français.
 5. **Accessibilité & Souveraineté Numérique** : Assistance vocale 100% locale via la **Web Speech API (`window.speechSynthesis`)**, sans aucune dépendance externe ni fuite de données nominatives vers des tiers.
 6. **Design Système Soigné (Sans Emojis)** : Utilisation d'icônes vectorielles SVG (Heroicons), typographie institutionnelle, palettes aux couleurs nationales du Bénin et tableau de bord de type Soft UI Dashboard PRO.
+
+---
+
+## 🎨 Caractéristiques UX/UI & Fonctionnalités Bonus
+
+1. **Carrousel Hero béninois** : 3 visuels haute définition intégrant les thèmes e-Gouvernement Bénin, Cotonou Smart City et Citoyenneté numérique.
+2. **Tableau de Bord Citoyen par NPI** : Cartes synthétiques (Total, Déposées, En cours, Validées, Rejetées) et barre de progression dynamique.
+3. **Imprimante & Récépissé Officiel A4 (Bonus)** : Génération d'une **Attestation de Dépôt officielle** avec en-tête de la République du Bénin, bloc NPI, référence UUID, QR code de vérification et impression/génération PDF via `window.print()`.
+4. **Copie rapide UUID (Bonus)** : Bouton interactif de copie de la référence avec feedback instantané.
+5. **Responsivité Intégrale (100%)** : Adaptation fluide sur smartphones, tablettes et écrans desktop pour tous les tableaux, formulaires et carrousels.
 
 ---
 

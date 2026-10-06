@@ -10,21 +10,21 @@ const DOCS_URL = 'http://localhost:8000/docs/api'
 const carouselSlides = [
   {
     image: '/images/slide1.jpg',
-    badge: 'République du Bénin · e-Services',
-    title: 'Centre de Services e-Gouvernement du Bénin',
-    subtitle: 'La dématérialisation intégrale des actes d\'état civil et pièces administratives à portée de main.',
+    badge: 'République du Bénin · Portail National e-Services',
+    title: 'Portail Unique de Suivi des Actes Administratifs',
+    subtitle: 'Consultez l\'avancement en temps réel de vos demandes d\'actes de naissance, casiers judiciaires et certificats de résidence en saisissant simplement votre NPI (Numéro Personnel d\'Identification à 10 chiffres).',
   },
   {
     image: '/images/slide2.jpg',
-    badge: 'ASIN Bénin · Innovation',
-    title: 'Cotonou Ville Connectée & Smart Nation',
-    subtitle: 'L\'excellence numérique au service du développement et de la modernisation des services publics.',
+    badge: 'ASIN Bénin · Agence du Numérique',
+    title: 'Modernisation & Dématérialisation Intégrale',
+    subtitle: 'Une plateforme e-Gouvernement moderne, sécurisée et 100% transparente garantissant l\'immuabilité de vos dossiers et un suivi personnalisé pour chaque citoyen béninois.',
   },
   {
     image: '/images/slide3.jpg',
-    badge: 'Citoyenneté & Simplicité',
-    title: 'Vos Démarches Numériques Simplifiées',
-    subtitle: 'Obtenez vos actes de naissance, casiers judiciaires et certificats de résidence rapidement.',
+    badge: 'Services aux Citoyens · Traçabilité Rapide',
+    title: 'Vos Démarches Numériques à Portée de Main',
+    subtitle: 'Déposez votre dossier en ligne, recevez votre référence UUID unique, téléchargez votre attestation de dépôt officielle et suivez l\'instruction en direct depuis votre tableau de bord.',
   },
 ]
 
@@ -505,8 +505,8 @@ onBeforeUnmount(() => {
         :key="index"
         :class="['absolute inset-0 transition-opacity duration-1000 ease-in-out', index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0']"
       >
-        <img :src="slide.image" :alt="slide.title" class="w-full h-full object-cover object-center filter brightness-[0.45]" />
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"></div>
+        <img :src="slide.image" :alt="slide.title" class="w-full h-full object-cover object-center filter brightness-[0.38]" />
+        <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent"></div>
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center py-12 sm:py-16">
           <span class="inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#FCD116] ring-1 ring-inset ring-white/20 backdrop-blur">
             <span class="h-1.5 w-1.5 rounded-full bg-[#FCD116]"></span>
@@ -515,9 +515,19 @@ onBeforeUnmount(() => {
           <h1 class="mt-4 max-w-3xl text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white drop-shadow-md">
             {{ slide.title }}
           </h1>
-          <p class="mt-3 max-w-2xl text-sm sm:text-lg text-emerald-100/90 drop-shadow">
+          <p class="mt-3 max-w-2xl text-sm sm:text-base lg:text-lg text-slate-200/90 leading-relaxed drop-shadow">
             {{ slide.subtitle }}
           </p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="#input-recherche-npi" class="inline-flex items-center gap-2 rounded-xl bg-[#008751] px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#006b40]">
+              <Icon name="search" class="h-4 w-4" />
+              Suivre avec mon NPI
+            </a>
+            <a href="#titre-depot" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/25 backdrop-blur transition hover:bg-white/20">
+              <Icon name="document" class="h-4 w-4" />
+              Formulaire de Dépôt
+            </a>
+          </div>
         </div>
       </div>
 

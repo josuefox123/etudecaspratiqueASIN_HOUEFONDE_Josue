@@ -5,6 +5,50 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api
 const DOCS_URL = 'http://localhost:8000/docs/api'
 
 /* ------------------------------------------------------------------
+ * Carousel Hero Béninois (3 Images Typiquement Béninoises)
+ * ------------------------------------------------------------------ */
+const carouselSlides = [
+  {
+    image: '/images/slide1.jpg',
+    badge: 'République du Bénin · e-Services',
+    title: 'Centre de Services e-Gouvernement du Bénin',
+    subtitle: 'La dématérialisation intégrale des actes d\'état civil et pièces administratives à portée de main.',
+  },
+  {
+    image: '/images/slide2.jpg',
+    badge: 'ASIN Bénin · Innovation',
+    title: 'Cotonou Ville Connectée & Smart Nation',
+    subtitle: 'L\'excellence numérique au service du développement et de la modernisation des services publics.',
+  },
+  {
+    image: '/images/slide3.jpg',
+    badge: 'Citoyenneté & Simplicité',
+    title: 'Vos Démarches Numériques Simplifiées',
+    subtitle: 'Obtenez vos actes de naissance, casiers judiciaires et certificats de résidence rapidement.',
+  },
+]
+
+const currentSlide = ref(0)
+let carouselTimer = null
+
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % carouselSlides.length
+}
+
+const prevSlide = () => {
+  currentSlide.value = (currentSlide.value - 1 + carouselSlides.length) % carouselSlides.length
+}
+
+const startCarousel = () => {
+  stopCarousel()
+  carouselTimer = setInterval(nextSlide, 5000)
+}
+
+const stopCarousel = () => {
+  if (carouselTimer) clearInterval(carouselTimer)
+}
+
+/* ------------------------------------------------------------------
  * Icônes SVG (Heroicons outline) – aucun emoji dans l'interface
  * ------------------------------------------------------------------ */
 const ICONS = {
@@ -28,6 +72,8 @@ const ICONS = {
   menu: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5',
   user: 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z',
   globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a15.3 15.3 0 0 1-4-9 15.3 15.3 0 0 1 4-9 15.3 15.3 0 0 1 4 9 15.3 15.3 0 0 1-4 9Zm-8.6-9h17.2',
+  chevronLeft: 'M15.75 19.5 8.25 12l7.5-7.5',
+  chevronRight: 'M8.25 4.5l7.5 7.5-7.5 7.5',
 }
 
 const Icon = (props) =>
@@ -79,7 +125,7 @@ const speak = (texte, key = null) => {
 }
 const speakGuide = () => speak(
   "Bienvenue sur le portail de l'Agence des Systèmes d'Information et du Numérique du Bénin. " +
-  "Pour suivre vos demandes, saisissez votre NPI à dix chiffres puis lancez la recherche. " +
+  "Pour consulter votre tableau de bord citoyen, saisissez votre NPI à dix chiffres. " +
   "Pour déposer une nouvelle demande, remplissez le formulaire de dépôt.",
   'guide'
 )
@@ -90,7 +136,7 @@ const speakDemande = (d) => {
 }
 
 /* ------------------------------------------------------------------
- * Portail public : recherche par NPI
+ * Portail public : recherche par NPI & Tableau de Bord Citoyen
  * ------------------------------------------------------------------ */
 const rechercheNpi = ref('')
 const filterStatutUsager = ref('')
@@ -101,6 +147,16 @@ const searchErrorMessage = ref('')
 const rechercheFaite = ref(false)
 
 const extractList = (body) => (Array.isArray(body.data) ? body.data : body.data?.data || [])
+
+// Statistiques du Citoyen Connecté par NPI
+const citoyenStats = computed(() => {
+  const total = demandesUsager.value.length
+  const deposees = demandesUsager.value.filter(d => d.statut === 'déposée').length
+  const enCours = demandesUsager.value.filter(d => d.statut === 'en cours de traitement').length
+  const validees = demandesUsager.value.filter(d => d.statut === 'validée').length
+  const rejetees = demandesUsager.value.filter(d => d.statut === 'rejetée').length
+  return { total, deposees, enCours, validees, rejetees }
+})
 
 const chargerDemandesUsager = async () => {
   searchErrorMessage.value = ''
@@ -119,7 +175,7 @@ const chargerDemandesUsager = async () => {
     if (res.ok && body.success) {
       demandesUsager.value = extractList(body)
       totalDemandesUsager.value = body.data?.total ?? demandesUsager.value.length
-      speak(`${totalDemandesUsager.value} demande${totalDemandesUsager.value > 1 ? 's' : ''} trouvée${totalDemandesUsager.value > 1 ? 's' : ''} pour ce NPI.`)
+      speak(`Tableau de bord chargé. ${totalDemandesUsager.value} demande${totalDemandesUsager.value > 1 ? 's' : ''} répertoriée${totalDemandesUsager.value > 1 ? 's' : ''} pour votre NPI.`)
     } else {
       demandesUsager.value = []
       searchErrorMessage.value = body.message || 'Aucune demande trouvée.'
@@ -164,6 +220,7 @@ const deposerDemande = async () => {
       formSuccess.value = { reference: body.data.reference, npi: nouveauDepot.npi }
       speak('Votre demande a été enregistrée avec succès. Elle est au statut déposée.')
       rechercheNpi.value = nouveauDepot.npi
+      chargerDemandesUsager()
       nouveauDepot.npi = ''
       nouveauDepot.nombre_copies = 1
     } else {
@@ -293,7 +350,6 @@ const confirmRejet = async () => {
   if (ok) showRejetModal.value = false
 }
 
-// Calculs statistiques
 const totalDemandes = computed(() => agentDemandes.value.length)
 
 const filteredAgentDemandes = computed(() => {
@@ -370,9 +426,14 @@ const typeRepartition = computed(() => {
   })
 })
 
-onMounted(() => window.addEventListener('hashchange', onHashChange))
+onMounted(() => {
+  window.addEventListener('hashchange', onHashChange)
+  startCarousel()
+})
+
 onBeforeUnmount(() => {
   window.removeEventListener('hashchange', onHashChange)
+  stopCarousel()
   clearTimeout(noticeTimer)
   if ('speechSynthesis' in window) window.speechSynthesis.cancel()
 })
@@ -387,8 +448,8 @@ onBeforeUnmount(() => {
       <span class="flex-1 bg-[#008751]"></span><span class="flex-1 bg-[#FCD116]"></span><span class="flex-1 bg-[#E8112D]"></span>
     </div>
 
-    <!-- En-tête -->
-    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+    <!-- En-tête Institutionnel -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
         <a href="#/" class="flex items-center gap-3 min-w-0">
           <span class="flex h-9 w-12 sm:h-10 sm:w-14 shrink-0 overflow-hidden rounded-md ring-1 ring-slate-200" aria-hidden="true">
@@ -415,37 +476,54 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <!-- Bandeau -->
-    <section class="relative overflow-hidden bg-[#063d2a] text-white">
-      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_top_right,#0f7a52_0%,transparent_60%)]" aria-hidden="true"></div>
-      <div class="absolute inset-0 opacity-[0.07] bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:48px_48px]" aria-hidden="true"></div>
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-        <p class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#FCD116] ring-1 ring-inset ring-white/15">
-          <span class="h-1.5 w-1.5 rounded-full bg-[#FCD116]"></span>
-          Services publics en ligne
-        </p>
-        <h1 class="mt-5 max-w-3xl text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-          Suivi des demandes d'actes administratifs
-        </h1>
-        <p class="mt-4 max-w-2xl text-base sm:text-lg text-emerald-100/90">
-          Déposez et suivez en ligne vos demandes d'acte de naissance, de casier judiciaire et de certificat de résidence à l'aide de votre NPI.
-        </p>
-        <ul class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl text-sm">
-          <li v-for="item in ['Suivi en temps réel', 'Données protégées', 'Assistance vocale intégrée']" :key="item" class="flex items-center gap-2 text-emerald-50">
-            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-              <Icon name="check" class="h-3.5 w-3.5" />
-            </span>
-            {{ item }}
-          </li>
-        </ul>
+    <!-- CARROUSEL HERO BÉNINOIS (3 IMAGES BÉNINOISES) -->
+    <section class="relative overflow-hidden bg-slate-900 text-white min-h-[320px] sm:min-h-[420px] flex items-center">
+      <div 
+        v-for="(slide, index) in carouselSlides" 
+        :key="index"
+        :class="['absolute inset-0 transition-opacity duration-1000 ease-in-out', index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0']"
+      >
+        <img :src="slide.image" :alt="slide.title" class="w-full h-full object-cover object-center filter brightness-[0.45]" />
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center py-12 sm:py-16">
+          <span class="inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#FCD116] ring-1 ring-inset ring-white/20 backdrop-blur">
+            <span class="h-1.5 w-1.5 rounded-full bg-[#FCD116]"></span>
+            {{ slide.badge }}
+          </span>
+          <h1 class="mt-4 max-w-3xl text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white drop-shadow-md">
+            {{ slide.title }}
+          </h1>
+          <p class="mt-3 max-w-2xl text-sm sm:text-lg text-emerald-100/90 drop-shadow">
+            {{ slide.subtitle }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Commandes de navigation carrousel -->
+      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-900/60 backdrop-blur px-3 py-1.5 rounded-full border border-white/15">
+        <button @click="prevSlide" @mouseenter="stopCarousel" @mouseleave="startCarousel" aria-label="Précédent" class="p-1 rounded-full text-white/80 hover:text-white transition">
+          <Icon name="chevronLeft" class="h-4 w-4" />
+        </button>
+        <div class="flex items-center gap-1.5">
+          <button 
+            v-for="(_, idx) in carouselSlides" 
+            :key="idx" 
+            @click="currentSlide = idx"
+            :class="['h-2 rounded-full transition-all duration-300', idx === currentSlide ? 'w-6 bg-[#FCD116]' : 'w-2 bg-white/40']"
+            :aria-label="`Diapositive ${idx + 1}`"
+          ></button>
+        </div>
+        <button @click="nextSlide" @mouseenter="stopCarousel" @mouseleave="startCarousel" aria-label="Suivant" class="p-1 rounded-full text-white/80 hover:text-white transition">
+          <Icon name="chevronRight" class="h-4 w-4" />
+        </button>
       </div>
     </section>
 
-    <!-- Contenu -->
-    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 pb-16 relative">
+    <!-- Contenu Principal Publique -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 items-start">
 
-        <!-- Recherche -->
+        <!-- Module 1: Recherche NPI & Tableau de Bord Citoyen -->
         <section aria-labelledby="titre-suivi" class="lg:col-span-3 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <div class="p-5 sm:p-8 border-b border-slate-100">
             <div class="flex items-start gap-4">
@@ -453,8 +531,8 @@ onBeforeUnmount(() => {
                 <Icon name="search" class="h-6 w-6" />
               </span>
               <div>
-                <h2 id="titre-suivi" class="text-lg sm:text-xl font-bold text-slate-900">Suivre mes demandes</h2>
-                <p class="mt-1 text-sm text-slate-500">Saisissez votre Numéro Personnel d'Identification (10 chiffres).</p>
+                <h2 id="titre-suivi" class="text-lg sm:text-xl font-bold text-slate-900">Tableau de bord Citoyen</h2>
+                <p class="mt-1 text-sm text-slate-500">Saisissez votre Numéro Personnel d'Identification (10 chiffres) pour afficher le tableau de suivi de vos actes.</p>
               </div>
             </div>
 
@@ -488,7 +566,7 @@ onBeforeUnmount(() => {
               >
                 <svg v-if="loadingSearch" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25" /><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
                 <Icon v-else name="search" class="h-4 w-4" />
-                Rechercher
+                Afficher
               </button>
             </form>
 
@@ -498,16 +576,34 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <!-- Résultats -->
+          <!-- TABLEAU DE BORD CITOYEN (RÉSULTATS DE L'USAGER CONNECTÉ PAR NPI) -->
           <div class="p-5 sm:p-8">
-            <div v-if="demandesUsager.length" class="space-y-4">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                {{ totalDemandesUsager }} demande{{ totalDemandesUsager > 1 ? 's' : '' }}
-              </p>
-              <ul class="space-y-3">
+            <div v-if="demandesUsager.length" class="space-y-6">
+              
+              <!-- Cards d'Indicateurs Synthétiques Citoyen -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <div class="text-[11px] font-bold uppercase text-slate-400">Total Demandes</div>
+                  <div class="text-xl font-bold text-slate-900 mt-0.5 tabular-nums">{{ citoyenStats.total }}</div>
+                </div>
+                <div class="bg-sky-50/60 p-3.5 rounded-xl border border-sky-200">
+                  <div class="text-[11px] font-bold uppercase text-sky-700">Déposées</div>
+                  <div class="text-xl font-bold text-sky-900 mt-0.5 tabular-nums">{{ citoyenStats.deposees }}</div>
+                </div>
+                <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200">
+                  <div class="text-[11px] font-bold uppercase text-amber-700">En cours</div>
+                  <div class="text-xl font-bold text-amber-900 mt-0.5 tabular-nums">{{ citoyenStats.enCours }}</div>
+                </div>
+                <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-200">
+                  <div class="text-[11px] font-bold uppercase text-emerald-700">Validées</div>
+                  <div class="text-xl font-bold text-emerald-900 mt-0.5 tabular-nums">{{ citoyenStats.validees }}</div>
+                </div>
+              </div>
+
+              <ul class="space-y-4">
                 <li
                   v-for="d in demandesUsager" :key="d.reference"
-                  class="group rounded-xl border border-slate-200 p-4 sm:p-5 transition hover:border-slate-300 hover:shadow-sm"
+                  class="group rounded-xl border border-slate-200 p-4 sm:p-5 transition hover:border-slate-300 hover:shadow-sm bg-white"
                 >
                   <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div class="flex items-start gap-3 min-w-0">
@@ -515,21 +611,33 @@ onBeforeUnmount(() => {
                         <Icon name="document" class="h-5 w-5" />
                       </span>
                       <div class="min-w-0">
-                        <p class="font-semibold text-slate-900 first-letter:uppercase">{{ d.type_acte }}</p>
+                        <p class="font-bold text-slate-900 first-letter:uppercase text-base">{{ d.type_acte }}</p>
                         <p class="mt-0.5 text-xs text-slate-500">
                           {{ d.nombre_copies }} exemplaire{{ d.nombre_copies > 1 ? 's' : '' }} · Déposée le {{ formatDate(d.created_at) }}
                         </p>
-                        <p class="mt-1 font-mono text-[11px] text-slate-400 break-all">Réf. {{ d.reference }}</p>
+                        <p class="mt-1 font-mono text-[11px] text-slate-400 break-all">Réf UUID : {{ d.reference }}</p>
                       </div>
                     </div>
-                    <span :class="['inline-flex items-center gap-1.5 self-start whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset', statutMeta(d.statut).badge]">
+                    <span :class="['inline-flex items-center gap-1.5 self-start whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset', statutMeta(d.statut).badge]">
                       <span :class="['h-1.5 w-1.5 rounded-full', statutMeta(d.statut).dot]"></span>
                       {{ statutMeta(d.statut).label }}
                     </span>
                   </div>
 
-                  <div v-if="d.statut === 'rejetée' && d.motif_rejet" class="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800 ring-1 ring-inset ring-rose-100">
-                    <span class="font-semibold">Motif du rejet :</span> {{ d.motif_rejet }}
+                  <!-- Indicateur visuel d'avancement (Timeline du Citoyen) -->
+                  <div class="mt-4 pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-1.5">
+                      <span>Prise en charge</span>
+                      <span>Instruction</span>
+                      <span>Clôture finale</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                      <div :class="['h-full transition-all duration-500', d.statut === 'déposée' ? 'w-1/3 bg-sky-500' : d.statut === 'en cours de traitement' ? 'w-2/3 bg-amber-500' : d.statut === 'validée' ? 'w-full bg-emerald-500' : 'w-full bg-rose-500']"></div>
+                    </div>
+                  </div>
+
+                  <div v-if="d.statut === 'rejetée' && d.motif_rejet" class="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-xs text-rose-800 ring-1 ring-inset ring-rose-100">
+                    <span class="font-bold">Motif officiel du rejet :</span> {{ d.motif_rejet }}
                   </div>
 
                   <div class="mt-4 flex justify-end">
@@ -539,7 +647,7 @@ onBeforeUnmount(() => {
                       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50 hover:text-[#008751]"
                     >
                       <Icon :name="speakingKey === d.reference ? 'stop' : 'speaker'" class="h-4 w-4" />
-                      {{ speakingKey === d.reference ? 'Arrêter' : 'Écouter' }}
+                      {{ speakingKey === d.reference ? 'Arrêter' : 'Écouter vocalement' }}
                     </button>
                   </div>
                 </li>
@@ -551,17 +659,17 @@ onBeforeUnmount(() => {
                 <Icon :name="rechercheFaite ? 'inbox' : 'search'" class="h-6 w-6" />
               </span>
               <p class="mt-4 text-sm font-medium text-slate-700">
-                {{ rechercheFaite ? 'Aucune demande trouvée pour ce NPI.' : 'Vos demandes apparaîtront ici.' }}
+                {{ rechercheFaite ? 'Aucune demande trouvée pour ce NPI.' : 'Votre tableau de bord citoyen s\'affichera ici.' }}
               </p>
               <p class="mt-1 text-xs text-slate-500">
-                {{ rechercheFaite ? 'Vérifiez le NPI saisi ou modifiez le filtre de statut.' : 'Lancez une recherche avec votre NPI.' }}
+                {{ rechercheFaite ? 'Vérifiez le NPI saisi ou déposez une nouvelle demande ci-contre.' : 'Saisissez votre NPI de 10 chiffres pour démarrer.' }}
               </p>
             </div>
           </div>
         </section>
 
-        <!-- Dépôt -->
-        <section aria-labelledby="titre-depot" class="lg:col-span-2 lg:sticky lg:top-28 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <!-- Module 2: Formulaire de Dépôt de Demande -->
+        <section aria-labelledby="titre-depot" class="lg:col-span-2 lg:sticky lg:top-24 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <div class="p-5 sm:p-8">
             <div class="flex items-start gap-4">
               <span class="hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#008751]">
@@ -575,7 +683,7 @@ onBeforeUnmount(() => {
 
             <form class="mt-6 space-y-5" @submit.prevent="deposerDemande" novalidate>
               <div>
-                <label for="input-depot-npi" class="block text-sm font-medium text-slate-700">NPI</label>
+                <label for="input-depot-npi" class="block text-sm font-medium text-slate-700">NPI (10 chiffres) *</label>
                 <input
                   id="input-depot-npi"
                   v-model="nouveauDepot.npi"
@@ -588,7 +696,7 @@ onBeforeUnmount(() => {
               </div>
 
               <fieldset>
-                <legend class="block text-sm font-medium text-slate-700">Type d'acte</legend>
+                <legend class="block text-sm font-medium text-slate-700">Type d'acte *</legend>
                 <div class="mt-1.5 grid grid-cols-1 gap-2">
                   <label
                     v-for="t in TYPES_ACTES" :key="t.value"

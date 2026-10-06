@@ -1,0 +1,29 @@
+# Root .gitignore for Monorepo (ASIN Bénin)
+
+# Dependencies
+**/vendor/
+**/node_modules/
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build outputs
+**/dist/
+**/public/build/
+
+# IDE & OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Databases & logs
+**/database/*.sqlite
+**/database/*.sqlite-journal
+**/storage/logs/*.log
+**/storage/framework/cache/
+**/storage/framework/sessions/
+**/storage/framework/views/

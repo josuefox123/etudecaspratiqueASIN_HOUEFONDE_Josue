@@ -74,6 +74,8 @@ const ICONS = {
   globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a15.3 15.3 0 0 1-4-9 15.3 15.3 0 0 1 4-9 15.3 15.3 0 0 1 4 9 15.3 15.3 0 0 1-4 9Zm-8.6-9h17.2',
   chevronLeft: 'M15.75 19.5 8.25 12l7.5-7.5',
   chevronRight: 'M8.25 4.5l7.5 7.5-7.5 7.5',
+  printer: 'M6.75 6a2.25 2.25 0 0 1 2.25-2.25h6a2.25 2.25 0 0 1 2.25 2.25v2.25H6.75V6ZM3.75 15.75A2.25 2.25 0 0 1 1.5 13.5v-3a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 10.5v3a2.25 2.25 0 0 1-2.25 2.25H3.75ZM16.5 18H7.5A2.25 2.25 0 0 1 5.25 15.75v-3h13.5v3A2.25 2.25 0 0 1 16.5 18Z',
+  clipboard: 'M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v9.25c0 .621-.504 1.125-1.125 1.125Z',
 }
 
 const Icon = (props) =>
@@ -145,6 +147,26 @@ const totalDemandesUsager = ref(0)
 const loadingSearch = ref(false)
 const searchErrorMessage = ref('')
 const rechercheFaite = ref(false)
+
+// Bonus : Copie Référence & Impression Récépissé Officiel
+const copiedRef = ref(null)
+const selectedRecepisse = ref(null)
+const showRecepisseModal = ref(false)
+
+const copyReference = (refVal) => {
+  navigator.clipboard.writeText(refVal)
+  copiedRef.value = refVal
+  setTimeout(() => { if (copiedRef.value === refVal) copiedRef.value = null }, 2500)
+}
+
+const openRecepisse = (d) => {
+  selectedRecepisse.value = d
+  showRecepisseModal.value = true
+}
+
+const triggerPrint = () => {
+  window.print()
+}
 
 const extractList = (body) => (Array.isArray(body.data) ? body.data : body.data?.data || [])
 
@@ -640,14 +662,32 @@ onBeforeUnmount(() => {
                     <span class="font-bold">Motif officiel du rejet :</span> {{ d.motif_rejet }}
                   </div>
 
-                  <div class="mt-4 flex justify-end">
+                  <div class="mt-4 flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      @click="copyReference(d.reference)"
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50 hover:text-[#008751]"
+                    >
+                      <Icon :name="copiedRef === d.reference ? 'check' : 'clipboard'" class="h-4 w-4" />
+                      {{ copiedRef === d.reference ? 'Copié !' : 'Copier Réf' }}
+                    </button>
+
+                    <button
+                      type="button"
+                      @click="openRecepisse(d)"
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#008751] bg-emerald-50 ring-1 ring-inset ring-emerald-200 transition hover:bg-emerald-100"
+                    >
+                      <Icon name="printer" class="h-4 w-4" />
+                      Fiche Récépissé
+                    </button>
+
                     <button
                       type="button"
                       @click="speakDemande(d)"
                       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50 hover:text-[#008751]"
                     >
                       <Icon :name="speakingKey === d.reference ? 'stop' : 'speaker'" class="h-4 w-4" />
-                      {{ speakingKey === d.reference ? 'Arrêter' : 'Écouter vocalement' }}
+                      {{ speakingKey === d.reference ? 'Arrêter' : 'Écouter' }}
                     </button>
                   </div>
                 </li>
@@ -1218,6 +1258,85 @@ onBeforeUnmount(() => {
           <button id="btn-confirmer-rejet" type="button" @click="confirmRejet" class="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-500">
             Confirmer le rejet
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modale & Document Récépissé Officiel (Impression A4) -->
+    <div v-if="showRecepisseModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto" role="dialog" aria-modal="true">
+      <div class="w-full max-w-2xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl space-y-6">
+        <!-- Header Non-Imprimable -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 print:hidden">
+          <div class="flex items-center gap-2">
+            <Icon name="document" class="h-6 w-6 text-[#008751]" />
+            <h3 class="text-lg font-bold text-slate-900">Récépissé Officiel de Dépôt</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" @click="triggerPrint" class="inline-flex items-center gap-2 rounded-xl bg-[#008751] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#006b40]">
+              <Icon name="printer" class="h-4 w-4" />
+              Imprimer / PDF
+            </button>
+            <button type="button" @click="showRecepisseModal = false" class="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+              <Icon name="close" class="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- ZONE IMPRIMABLE DU RÉCÉPISSÉ -->
+        <div id="section-recepisse-print" class="space-y-6 border border-slate-200 rounded-xl p-6 bg-slate-50/50">
+          <div class="flex items-start justify-between border-b-2 border-[#008751] pb-4">
+            <div>
+              <p class="text-xs font-bold tracking-widest text-[#008751] uppercase">RÉPUBLIQUE DU BÉNIN</p>
+              <p class="text-[10px] text-slate-500">Fraternité - Justice - Travail</p>
+              <h2 class="mt-2 text-base font-extrabold text-slate-900">ASIN BÉNIN · ATTESTATION DE DÉPÔT</h2>
+              <p class="text-xs text-slate-500">Système National de Suivi des Actes Administratifs</p>
+            </div>
+            <!-- Visuel QR Code officiel -->
+            <div class="flex flex-col items-center bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+              <svg class="h-16 w-16 text-slate-800" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm10 0h2v2h-2v-2zm2-2h2v2h-2v-2zm-2-2h2v2h-2v-2zm4 4h2v2h-2v-2zm-2 2h2v2h-2v-2z"/>
+              </svg>
+              <span class="mt-1 text-[9px] font-mono font-bold text-slate-400">VÉRIFICATION</span>
+            </div>
+          </div>
+
+          <div v-if="selectedRecepisse" class="grid grid-cols-2 gap-4 text-xs">
+            <div class="bg-white p-3 rounded-lg border border-slate-200">
+              <span class="text-slate-400 font-medium block">Titulaire (NPI)</span>
+              <span class="font-mono font-bold text-slate-900 text-sm tracking-wider">{{ selectedRecepisse.npi }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-slate-200">
+              <span class="text-slate-400 font-medium block">Référence Unique (UUID)</span>
+              <span class="font-mono font-bold text-[#008751] text-xs break-all">{{ selectedRecepisse.reference }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-slate-200">
+              <span class="text-slate-400 font-medium block">Type d'Acte Demande</span>
+              <span class="font-bold text-slate-900 first-letter:uppercase">{{ selectedRecepisse.type_acte }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-slate-200">
+              <span class="text-slate-400 font-medium block">Nombre d'Exemplaires</span>
+              <span class="font-bold text-slate-900">{{ selectedRecepisse.nombre_copies }} exemplaire{{ selectedRecepisse.nombre_copies > 1 ? 's' : '' }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-slate-200">
+              <span class="text-slate-400 font-medium block">Date & Heure d'Enregistrement</span>
+              <span class="font-medium text-slate-800">{{ formatDate(selectedRecepisse.created_at) }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-slate-200">
+              <span class="text-slate-400 font-medium block">Statut Actuel</span>
+              <span :class="['inline-flex items-center gap-1 font-bold mt-0.5', selectedRecepisse.statut === 'validée' ? 'text-emerald-700' : selectedRecepisse.statut === 'rejetée' ? 'text-rose-700' : 'text-amber-700']">
+                {{ selectedRecepisse.statut }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="selectedRecepisse?.statut === 'rejetée' && selectedRecepisse?.motif_rejet" class="bg-rose-50 p-3 rounded-lg border border-rose-200 text-xs text-rose-800">
+            <span class="font-bold">Motif du rejet :</span> {{ selectedRecepisse.motif_rejet }}
+          </div>
+
+          <div class="border-t border-slate-200 pt-4 text-[10px] text-slate-500 space-y-1">
+            <p><span class="font-bold">Remarque importante :</span> Ce récépissé est une preuve officielle de dépôt d'acte administratif auprès de l'ASIN Bénin.</p>
+            <p>Conservez précieusement la référence UUID pour suivre à tout moment l'état d'avancement de votre dossier sur le portail public.</p>
+          </div>
         </div>
       </div>
     </div>
